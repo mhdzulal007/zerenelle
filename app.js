@@ -1840,26 +1840,28 @@ function renderAdminProductList() {
   if (!listEl) return;
 
   listEl.innerHTML = products.map((p, idx) => `
-    <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <img src="${p.image}" class="w-14 h-14 rounded-xl object-cover border border-stone-200 flex-shrink-0 shadow-xs">
-        <div>
-          <div class="font-bold text-stone-900 text-sm">${p.title}</div>
-          <div class="text-[11px] text-stone-500">Category: <span class="capitalize">${p.category}</span> • Badge: <span class="text-rosebrand-700 font-semibold">${p.badge || 'None'}</span></div>
+    <div class="p-3.5 sm:p-4 bg-stone-50 rounded-2xl border border-stone-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+      <div class="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+        <img src="${p.image}" class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border border-stone-200 flex-shrink-0 shadow-xs">
+        <div class="min-w-0 flex-1">
+          <div class="font-bold text-stone-900 text-sm truncate">${escapeHTML(p.title)}</div>
+          <div class="text-[11px] text-stone-500 truncate">Category: <span class="capitalize">${escapeHTML(p.category)}</span> • Badge: <span class="text-rosebrand-700 font-semibold">${escapeHTML(p.badge || 'None')}</span></div>
           <div class="text-xs font-bold text-stone-800 mt-0.5">${formatINR(p.price)} ${p.originalPrice ? `<span class="text-stone-400 line-through text-[11px] font-normal">${formatINR(p.originalPrice)}</span>` : ''}</div>
         </div>
       </div>
-      <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-        <div class="flex items-center gap-1 bg-white p-1 rounded-xl border border-stone-300">
-          <span class="text-xs font-bold text-stone-500 pl-1">₹</span>
-          <input type="number" value="${p.price}" onchange="updateProductPrice('${p.id}', this.value)" class="w-20 p-1 text-xs font-bold text-stone-800 border-0 focus:ring-0" title="Quick change price">
+      <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-200/60 flex-shrink-0">
+        <div class="flex items-center gap-1 bg-white px-2 py-1.5 rounded-xl border border-stone-300">
+          <span class="text-xs font-bold text-stone-500">₹</span>
+          <input type="number" value="${p.price}" onchange="updateProductPrice('${p.id}', this.value)" class="w-16 sm:w-20 p-0 text-xs font-bold text-stone-800 border-0 focus:ring-0" title="Quick change price">
         </div>
-        <button onclick="openEditProductModal('${p.id}')" class="px-3 py-2 bg-stone-800 hover:bg-stone-900 text-white text-xs font-semibold rounded-xl transition-colors flex items-center gap-1">
-          <span>✏️ Edit</span>
-        </button>
-        <button onclick="deleteProduct('${p.id}')" class="px-3 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-semibold rounded-xl transition-colors flex items-center gap-1">
-          <span>🗑️ Delete</span>
-        </button>
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <button onclick="openEditProductModal('${p.id}')" class="px-3 py-1.5 sm:py-2 bg-stone-800 hover:bg-stone-900 text-white text-xs font-semibold rounded-xl transition-colors flex items-center gap-1 cursor-pointer">
+            <span>✏️ Edit</span>
+          </button>
+          <button onclick="deleteProduct('${p.id}')" class="px-3 py-1.5 sm:py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-semibold rounded-xl transition-colors flex items-center gap-1 cursor-pointer">
+            <span>🗑️ Delete</span>
+          </button>
+        </div>
       </div>
     </div>
   `).join('');
@@ -2243,10 +2245,10 @@ function renderAdminOrdersList(orders) {
     const safeId = escapeHTML(order.id);
 
     return `
-      <div class="p-5 bg-white rounded-2xl border border-stone-200 shadow-xs space-y-3">
+      <div class="p-3.5 sm:p-5 bg-white rounded-2xl border border-stone-200 shadow-xs space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-stone-100">
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <span class="font-mono font-bold text-sm text-stone-900">${safeId}</span>
               <span class="text-[10px] px-2 py-0.5 rounded-full font-bold border ${badgeClass}">${escapeHTML(order.status)}</span>
               <span class="text-[10px] text-stone-400">${order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Recent'}</span>
@@ -2255,7 +2257,7 @@ function renderAdminOrdersList(orders) {
               Source: <span class="font-medium text-stone-800">${safeSource || 'Website'}</span>
             </div>
           </div>
-          <div class="text-right">
+          <div class="text-left sm:text-right">
             <div class="text-sm font-bold text-rosebrand-700">${formatINR(order.total || 0)}</div>
             <div class="text-[10px] text-stone-400">${escapeHTML(order.paymentMode || 'Prepaid UPI')}</div>
           </div>
@@ -2280,10 +2282,10 @@ function renderAdminOrdersList(orders) {
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-stone-100 text-xs">
-          <div class="flex items-center gap-2">
-            <span class="font-semibold text-stone-600 text-[11px]">Update Status:</span>
-            <select onchange="updateOrderStatus('${safeId}', this.value)" class="p-1.5 rounded-lg border border-stone-300 text-xs bg-stone-50 font-medium">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t border-stone-100 text-xs">
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <span class="font-semibold text-stone-600 text-[11px] whitespace-nowrap">Status:</span>
+            <select onchange="updateOrderStatus('${safeId}', this.value)" class="flex-1 sm:flex-initial p-1.5 rounded-lg border border-stone-300 text-xs bg-stone-50 font-medium">
               <option value="Received" ${order.status === 'Received' ? 'selected' : ''}>⏳ Received</option>
               <option value="Crafting" ${order.status === 'Crafting' ? 'selected' : ''}>✂️ Crafting Bouquet</option>
               <option value="Dispatched" ${order.status === 'Dispatched' ? 'selected' : ''}>🚚 Dispatched (Speed Post/Courier)</option>
@@ -2292,8 +2294,8 @@ function renderAdminOrdersList(orders) {
           </div>
 
           ${order.phone ? `
-            <a href="https://api.whatsapp.com/send?phone=91${order.phone.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(`Hi ${order.customerName}! 🌸 This is Zerenelle Atelier regarding your bespoke bouquet order #${order.id}.`)}" target="_blank" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
-              <span>💬 Message Customer on WhatsApp</span>
+            <a href="https://api.whatsapp.com/send?phone=91${order.phone.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(`Hi ${order.customerName}! 🌸 This is Zerenelle Atelier regarding your bespoke bouquet order #${order.id}.`)}" target="_blank" class="w-full sm:w-auto px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+              <span>💬 Message on WhatsApp</span>
             </a>
           ` : ''}
         </div>
@@ -2361,29 +2363,31 @@ function renderAdminBuilderStemsList() {
           </div>
         </div>
 
-        <div class="flex items-center gap-2.5 flex-wrap md:flex-nowrap justify-end flex-shrink-0">
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 justify-between sm:justify-end w-full md:w-auto pt-2.5 md:pt-0 border-t md:border-t-0 border-stone-100 flex-shrink-0">
           <div class="flex items-center gap-1.5 bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-1.5">
             <span class="text-xs font-bold text-stone-600">₹</span>
             <input type="number" 
                    value="${stem.price}" 
                    onchange="updateStemPrice('${stem.id}', this.value)" 
-                   class="w-16 bg-transparent text-xs font-bold font-mono text-stone-900 focus:outline-none text-right"
+                   class="w-14 sm:w-16 bg-transparent text-xs font-bold font-mono text-stone-900 focus:outline-none text-right"
                    title="Edit price and press Enter">
             <span class="text-[10px] text-stone-400">/stem</span>
           </div>
 
-          <label class="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-semibold cursor-pointer transition-colors border border-stone-200 flex items-center gap-1">
-            <span>📷 Change</span>
-            <input type="file" accept="image/*" class="hidden" onchange="handleStemPhotoUpload('${stem.id}', this)">
-          </label>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <label class="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-semibold cursor-pointer transition-colors border border-stone-200 flex items-center gap-1">
+              <span>📷 Change</span>
+              <input type="file" accept="image/*" class="hidden" onchange="handleStemPhotoUpload('${stem.id}', this)">
+            </label>
 
-          <button type="button" onclick="toggleStemStock('${stem.id}')" class="px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${isOutOfStock ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'}">
-            ${isOutOfStock ? 'Mark In-Stock' : 'Out-of-Stock'}
-          </button>
+            <button type="button" onclick="toggleStemStock('${stem.id}')" class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${isOutOfStock ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'}">
+              ${isOutOfStock ? 'In-Stock' : 'Out-of-Stock'}
+            </button>
 
-          <button type="button" onclick="deleteBuilderStem('${stem.id}')" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-semibold transition-colors border border-rose-200" title="Delete flower from customizer">
-            🗑️ Delete
-          </button>
+            <button type="button" onclick="deleteBuilderStem('${stem.id}')" class="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-semibold transition-colors border border-rose-200 cursor-pointer" title="Delete flower from customizer">
+              🗑️
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -2790,9 +2794,9 @@ function renderAdminReviewsList() {
     const safeId = escapeHTML(rev.id || '');
 
     return `
-      <div class="p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="space-y-1">
-          <div class="flex items-center gap-2">
+      <div class="p-3.5 sm:p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div class="space-y-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <span class="font-bold text-sm text-stone-900">${safeName}</span>
             <span class="text-amber-500 font-bold text-xs">${stars}</span>
             <span class="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 font-medium">${safeLocation}</span>
@@ -2801,7 +2805,7 @@ function renderAdminReviewsList() {
           <p class="text-xs text-stone-600 italic">"${safeComment}"</p>
           <div class="text-[10px] text-stone-400">${safeDate}</div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
           <button onclick="adminDeleteReview('${safeId}')" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             <span>Delete</span>

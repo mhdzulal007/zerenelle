@@ -615,24 +615,47 @@
       input.type = input.type === 'password' ? 'text' : 'password';
     }
 
-    // Authentication Gate Logic for admin.html
-    function handleAdminLogin(e) {
+    // Authentication Gate Logic for admin.html (Server-Verified & Rate-Limit Protected)
+    async function handleAdminLogin(e) {
       if (e) e.preventDefault();
       const pinInput = document.getElementById('admin-pin-input');
       const pin = pinInput ? pinInput.value.trim() : '';
-      const currentPin = (typeof settings !== 'undefined' && settings && settings.adminPin) 
-        ? String(settings.adminPin).trim() 
-        : '1234';
+      const errEl = document.getElementById('login-error-msg');
+      if (!pin) return;
 
-      if (pin === currentPin || pin === '1234') {
-        const errEl = document.getElementById('login-error-msg');
-        if (errEl) errEl.classList.add('hidden');
-        sessionStorage.setItem('zerenelle_admin_logged_in', 'true');
-        sessionStorage.setItem('zerenelle_admin_pin', pin);
-        showAdminDashboard();
-      } else {
-        const errEl = document.getElementById('login-error-msg');
-        if (errEl) errEl.classList.remove('hidden');
+      try {
+        const res = await fetch('/api/backup', {
+          headers: { 'x-admin-pin': pin }
+        });
+
+        if (res.ok) {
+          if (errEl) errEl.classList.add('hidden');
+          sessionStorage.setItem('zerenelle_admin_logged_in', 'true');
+          sessionStorage.setItem('zerenelle_admin_pin', pin);
+          showAdminDashboard();
+        } else {
+          const data = await res.json().catch(() => ({}));
+          if (errEl) {
+            errEl.textContent = data.error || 'Incorrect PIN. Access denied.';
+            errEl.classList.remove('hidden');
+          }
+        }
+      } catch (err) {
+        // Offline / fallback verification
+        const currentPin = (typeof settings !== 'undefined' && settings && settings.adminPin) 
+          ? String(settings.adminPin).trim() 
+          : '1234';
+        if (pin === currentPin) {
+          if (errEl) errEl.classList.add('hidden');
+          sessionStorage.setItem('zerenelle_admin_logged_in', 'true');
+          sessionStorage.setItem('zerenelle_admin_pin', pin);
+          showAdminDashboard();
+        } else {
+          if (errEl) {
+            errEl.textContent = 'Incorrect PIN. Please try again.';
+            errEl.classList.remove('hidden');
+          }
+        }
       }
     }
 

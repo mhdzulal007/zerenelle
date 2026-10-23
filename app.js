@@ -2157,10 +2157,15 @@ async function saveAdminGlobalSettings() {
   if (wa) settings.whatsappNumber = wa;
   if (upi) settings.upiId = upi;
   if (ig) settings.instagramHandle = ig.replace(/^@/, '');
-  if (pin) settings.adminPin = pin;
+  if (pin) {
+    settings.adminPin = pin;
+    sessionStorage.setItem('zerenelle_admin_pin', pin);
+    const pinInput = document.getElementById('admin-pin-new');
+    if (pinInput) pinInput.value = '';
+  }
 
   saveSettings();
-  showToast('Admin settings & banner offer updated successfully! 🌴');
+  showToast('Admin settings & Master PIN updated successfully! 🌸');
 
   try {
     await fetch('/api/settings', {

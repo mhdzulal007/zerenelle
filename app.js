@@ -324,6 +324,17 @@ function formatINR(amount) {
   return '₹' + Math.round(amount).toLocaleString('en-IN');
 }
 
+// Client-Side Security Sanitizer to Defeat Stored XSS Attacks
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // 3. PERSISTENCE HELPERS
 function saveProducts() {
   localStorage.setItem('zerenelle_products', JSON.stringify(products));
@@ -2216,37 +2227,45 @@ function renderAdminOrdersList(orders) {
       'Delivered': 'bg-emerald-100 text-emerald-800 border-emerald-300'
     };
     const badgeClass = statusColors[order.status] || 'bg-stone-100 text-stone-800 border-stone-300';
-    const itemsSummary = (order.items || []).map(i => `${i.title} (${i.quantity}x)`).join(', ') || 'Custom Bouquet';
+    const itemsSummary = (order.items || []).map(i => `${escapeHTML(i.title)} (${parseInt(i.quantity) || 1}x)`).join(', ') || 'Custom Bouquet';
+    const safeCustomer = escapeHTML(order.customerName);
+    const safePhone = escapeHTML(order.phone);
+    const safeAddress = escapeHTML(order.address);
+    const safeDistrict = escapeHTML(order.district);
+    const safePincode = escapeHTML(order.pincode);
+    const safeOccasion = escapeHTML(order.occasion);
+    const safeSource = escapeHTML(order.source);
+    const safeId = escapeHTML(order.id);
 
     return `
       <div class="p-5 bg-white rounded-2xl border border-stone-200 shadow-xs space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-stone-100">
           <div>
             <div class="flex items-center gap-2">
-              <span class="font-mono font-bold text-sm text-stone-900">${order.id}</span>
-              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold border ${badgeClass}">${order.status}</span>
+              <span class="font-mono font-bold text-sm text-stone-900">${safeId}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold border ${badgeClass}">${escapeHTML(order.status)}</span>
               <span class="text-[10px] text-stone-400">${order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Recent'}</span>
             </div>
             <div class="text-xs text-stone-600 mt-0.5">
-              Source: <span class="font-medium text-stone-800">${order.source || 'Website'}</span>
+              Source: <span class="font-medium text-stone-800">${safeSource || 'Website'}</span>
             </div>
           </div>
           <div class="text-right">
             <div class="text-sm font-bold text-rosebrand-700">${formatINR(order.total || 0)}</div>
-            <div class="text-[10px] text-stone-400">${order.paymentMode || 'Prepaid UPI'}</div>
+            <div class="text-[10px] text-stone-400">${escapeHTML(order.paymentMode || 'Prepaid UPI')}</div>
           </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div>
             <span class="text-stone-400 block text-[10px] uppercase font-bold">Customer Details</span>
-            <div class="font-bold text-stone-900">${order.customerName}</div>
-            <div class="text-stone-600 font-mono text-[11px]">${order.phone || 'Phone via WhatsApp'}</div>
-            <div class="text-stone-500 text-[11px] mt-0.5">${order.address ? `${order.address}, ` : ''}${order.district} ${order.pincode ? `- ${order.pincode}` : ''}</div>
+            <div class="font-bold text-stone-900">${safeCustomer}</div>
+            <div class="text-stone-600 font-mono text-[11px]">${safePhone || 'Phone via WhatsApp'}</div>
+            <div class="text-stone-500 text-[11px] mt-0.5">${safeAddress ? `${safeAddress}, ` : ''}${safeDistrict} ${safePincode ? `- ${safePincode}` : ''}</div>
             ${(order.occasion || order.deliveryDate) ? `
               <div class="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rosebrand-50 border border-rosebrand-200 text-rosebrand-900 text-[11px] font-semibold">
-                <span>🎉 ${order.occasion || 'Celebration'}</span>
-                ${order.deliveryDate ? `<span>• 🎯 Target: <strong>${new Date(order.deliveryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</strong></span>` : ''}
+                <span>🎉 ${safeOccasion || 'Celebration'}</span>
+                ${order.deliveryDate ? `<span>• 🎯 Target: <strong>${escapeHTML(new Date(order.deliveryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }))}</strong></span>` : ''}
               </div>
             ` : ''}
           </div>
@@ -2259,7 +2278,7 @@ function renderAdminOrdersList(orders) {
         <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-stone-100 text-xs">
           <div class="flex items-center gap-2">
             <span class="font-semibold text-stone-600 text-[11px]">Update Status:</span>
-            <select onchange="updateOrderStatus('${order.id}', this.value)" class="p-1.5 rounded-lg border border-stone-300 text-xs bg-stone-50 font-medium">
+            <select onchange="updateOrderStatus('${safeId}', this.value)" class="p-1.5 rounded-lg border border-stone-300 text-xs bg-stone-50 font-medium">
               <option value="Received" ${order.status === 'Received' ? 'selected' : ''}>⏳ Received</option>
               <option value="Crafting" ${order.status === 'Crafting' ? 'selected' : ''}>✂️ Crafting Bouquet</option>
               <option value="Dispatched" ${order.status === 'Dispatched' ? 'selected' : ''}>🚚 Dispatched (Speed Post/Courier)</option>
@@ -2636,32 +2655,39 @@ function renderReviews() {
   }
 
   container.innerHTML = storeReviews.map(rev => {
-    const stars = '★'.repeat(rev.rating || 5) + '☆'.repeat(Math.max(0, 5 - (rev.rating || 5)));
+    const safeRating = Math.max(1, Math.min(5, parseInt(rev.rating) || 5));
+    const stars = '★'.repeat(safeRating) + '☆'.repeat(5 - safeRating);
+    const safeName = escapeHTML(rev.name || 'Valued Patron');
+    const safeLocation = escapeHTML(rev.location || 'Kerala');
+    const safeOccasion = escapeHTML(rev.occasion || 'Artisan Gift');
+    const safeComment = escapeHTML(rev.comment || '');
+    const safeDate = escapeHTML(rev.date || 'Recent');
+
     return `
       <div class="p-8 rounded-3xl bg-[#FAF7F2] border border-[#EDE4DC] shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between space-y-4">
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-amber-500 text-sm tracking-wider font-bold">${stars}</span>
             <span class="text-[10px] px-2.5 py-1 rounded-full bg-rosebrand-100 text-rosebrand-800 font-semibold">
-              ${rev.occasion || 'Artisan Gift'}
+              ${safeOccasion}
             </span>
           </div>
           <p class="text-stone-700 text-xs sm:text-sm leading-relaxed italic">
-            "${rev.comment}"
+            "${safeComment}"
           </p>
         </div>
 
         <div class="pt-4 border-t border-stone-200/80 flex items-center justify-between">
           <div>
-            <div class="font-bold text-stone-900 text-xs sm:text-sm">${rev.name}</div>
-            <div class="text-[11px] text-stone-500">${rev.location}</div>
+            <div class="font-bold text-stone-900 text-xs sm:text-sm">${safeName}</div>
+            <div class="text-[11px] text-stone-500">${safeLocation}</div>
           </div>
           <div class="text-right">
             <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
               <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
               <span>Verified Patron</span>
             </span>
-            <div class="text-[10px] text-stone-400 mt-0.5">${rev.date || 'Recent'}</div>
+            <div class="text-[10px] text-stone-400 mt-0.5">${safeDate}</div>
           </div>
         </div>
       </div>
@@ -2749,21 +2775,29 @@ function renderAdminReviewsList() {
   }
 
   container.innerHTML = adminReviews.map(rev => {
-    const stars = '★'.repeat(rev.rating || 5);
+    const safeRating = Math.max(1, Math.min(5, parseInt(rev.rating) || 5));
+    const stars = '★'.repeat(safeRating);
+    const safeName = escapeHTML(rev.name || 'Valued Patron');
+    const safeLocation = escapeHTML(rev.location || 'Kerala');
+    const safeOccasion = escapeHTML(rev.occasion || 'Gift');
+    const safeComment = escapeHTML(rev.comment || '');
+    const safeDate = escapeHTML(rev.date || 'Recent');
+    const safeId = escapeHTML(rev.id || '');
+
     return `
       <div class="p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="space-y-1">
           <div class="flex items-center gap-2">
-            <span class="font-bold text-sm text-stone-900">${rev.name}</span>
+            <span class="font-bold text-sm text-stone-900">${safeName}</span>
             <span class="text-amber-500 font-bold text-xs">${stars}</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 font-medium">${rev.location}</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-rosebrand-50 text-rosebrand-700 font-semibold">${rev.occasion || 'Gift'}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 font-medium">${safeLocation}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-rosebrand-50 text-rosebrand-700 font-semibold">${safeOccasion}</span>
           </div>
-          <p class="text-xs text-stone-600 italic">"${rev.comment}"</p>
-          <div class="text-[10px] text-stone-400">${rev.date || 'Recent'}</div>
+          <p class="text-xs text-stone-600 italic">"${safeComment}"</p>
+          <div class="text-[10px] text-stone-400">${safeDate}</div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
-          <button onclick="adminDeleteReview('${rev.id}')" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer">
+          <button onclick="adminDeleteReview('${safeId}')" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             <span>Delete</span>
           </button>

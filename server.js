@@ -3,17 +3,68 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security Middleware: Hide Express signature & add HTTP Defense Headers
+// Security Defense Layer 1: Hide Server Engine & Apply OWASP Hardened HTTP Headers
 app.disable('x-powered-by');
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  // Content Security Policy permitting local assets, Tailwind CDN, and web fonts
+  res.setHeader('Content-Security-Policy', "default-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'self'; object-src 'none';");
+  next();
+});
+
+// Security Defense Layer 2: Sensitive File Shielding & Anti-Path Traversal (Blocks Information Disclosure)
+app.use((req, res, next) => {
+  const p = req.path.toLowerCase();
+  if (
+    p.startsWith('/data') ||
+    p.includes('database.json') ||
+    p.startsWith('/.git') ||
+    p.endsWith('.json') ||
+    p === '/server.js' ||
+    p === '/package.json' ||
+    p === '/package-lock.json' ||
+    p.endsWith('.md') ||
+    p.startsWith('/.')
+  ) {
+    return res.status(403).json({ error: 'Access Denied: Protected atelier asset.' });
+  }
+  next();
+});
+
+// Security Defense Layer 3: Global Rate Limiting & DoS Defense (Max 120 req/min per IP)
+const ipRateLimits = new Map();
+const orderRateLimits = new Map();
+const reviewRateLimits = new Map();
+const failedPinAttempts = new Map();
+
+function getClientIP(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.socket.remoteAddress || '127.0.0.1';
+}
+
+app.use((req, res, next) => {
+  const ip = getClientIP(req);
+  const now = Date.now();
+  let record = ipRateLimits.get(ip);
+  if (!record || now > record.resetTime) {
+    record = { count: 1, resetTime: now + 60 * 1000 };
+    ipRateLimits.set(ip, record);
+  } else {
+    record.count++;
+    if (record.count > 120) {
+      return res.status(429).json({ error: 'Too Many Requests: Network rate limit exceeded. Please wait a minute.' });
+    }
+  }
   next();
 });
 
@@ -369,19 +420,76 @@ function writeDatabase(db) {
 // Ensure database file exists on startup
 readDatabase();
 
+// Helper for constant-time comparison to defeat timing attacks on secret PINs
+function safeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+// Input sanitizer helper to prevent Stored XSS & script injection
+function sanitizeString(str, maxLen = 255) {
+  if (!str || typeof str !== 'string') return '';
+  return str.trim().replace(/[<>]/g, '').slice(0, maxLen);
+}
+
+// IP-based endpoint rate limit check
+function checkRateLimit(map, ip, maxRequests, windowMs) {
+  const now = Date.now();
+  let record = map.get(ip);
+  if (!record || now > record.resetTime) {
+    map.set(ip, { count: 1, resetTime: now + windowMs });
+    return true;
+  }
+  if (record.count >= maxRequests) {
+    return false;
+  }
+  record.count++;
+  return true;
+}
+
 // ==========================================
 // SECURITY AUTHORIZATION MIDDLEWARE
-// Protects administrative mutation endpoints against unauthorized external access
+// Defeats brute-force attacks with IP lockout (5 fails = 15m lockout) & timing attacks
 // ==========================================
 function requireAdminAuth(req, res, next) {
+  const ip = getClientIP(req);
+  const now = Date.now();
+  const attempt = failedPinAttempts.get(ip);
+  if (attempt && attempt.lockedUntil > now) {
+    const waitMin = Math.ceil((attempt.lockedUntil - now) / 60000);
+    return res.status(429).json({
+      success: false,
+      error: `Security Lockout: Too many failed PIN attempts. Admin access locked for ${waitMin} minute(s).`
+    });
+  }
+
   const pinHeader = req.headers['x-admin-pin'] || req.query.admin_pin;
   const db = readDatabase();
   const currentPin = (db.settings && db.settings.adminPin) ? String(db.settings.adminPin).trim() : '1234';
+  const candidatePin = pinHeader ? String(pinHeader).trim() : '';
 
-  if (pinHeader && (String(pinHeader).trim() === currentPin || String(pinHeader).trim() === '1234')) {
+  if (candidatePin && safeCompare(candidatePin, currentPin)) {
+    failedPinAttempts.delete(ip); // reset upon successful authentication
     return next();
   }
-  return res.status(401).json({ success: false, error: 'Unauthorized: Valid Atelier Admin PIN required.' });
+
+  // Failed PIN attempt tracking
+  const count = (attempt ? attempt.count : 0) + 1;
+  let lockedUntil = 0;
+  if (count >= 5) {
+    lockedUntil = now + 15 * 60 * 1000; // 15-minute lockout after 5 consecutive failures
+  }
+  failedPinAttempts.set(ip, { count, lockedUntil });
+
+  return res.status(401).json({
+    success: false,
+    error: count >= 5
+      ? 'Security Alert: Maximum attempts exceeded. Admin access locked for 15 minutes.'
+      : `Unauthorized: Invalid Atelier Admin PIN. (${5 - count} attempt(s) remaining)`
+  });
 }
 
 // ========================
@@ -562,23 +670,57 @@ app.get('/api/orders', (req, res) => {
 });
 
 app.post('/api/orders', (req, res) => {
+  const ip = getClientIP(req);
+  if (!checkRateLimit(orderRateLimits, ip, 10, 15 * 60 * 1000)) {
+    return res.status(429).json({
+      success: false,
+      error: 'Security Rate Limit: Maximum 10 orders per 15 minutes per IP. Please contact atelier WhatsApp for large or urgent orders.'
+    });
+  }
+
   const db = readDatabase();
+  const raw = req.body || {};
+
+  const customerName = sanitizeString(raw.customerName, 80) || 'Valued Patron';
+  const phone = sanitizeString(raw.phone, 25).replace(/[^0-9+\s-]/g, '');
+  const district = sanitizeString(raw.district, 60) || 'Kerala';
+  const pincode = sanitizeString(raw.pincode, 10).replace(/[^0-9]/g, '');
+  const address = sanitizeString(raw.address, 250);
+  const occasion = sanitizeString(raw.occasion, 80) || 'Special Celebration';
+  const deliveryDate = sanitizeString(raw.deliveryDate, 30);
+  const source = sanitizeString(raw.source, 50) || 'Website / WhatsApp';
+
+  // Sanitize and constrain order items
+  const sanitizedItems = Array.isArray(raw.items)
+    ? raw.items.slice(0, 30).map(item => ({
+        id: sanitizeString(item.id, 50),
+        title: sanitizeString(item.title, 120),
+        price: Math.max(0, parseInt(item.price) || 0),
+        quantity: Math.max(1, Math.min(99, parseInt(item.quantity) || 1)),
+        image: sanitizeString(item.image, 250)
+      }))
+    : [];
+
+  const subtotal = Math.max(0, parseInt(raw.subtotal) || 0);
+  const deliveryCharge = Math.max(0, parseInt(raw.deliveryCharge) || 0);
+  const total = Math.max(0, parseInt(raw.total) || (subtotal + deliveryCharge));
+
   const newOrder = {
-    id: req.body.id || `ZR-KL-${Math.floor(100000 + Math.random() * 900000)}`,
-    customerName: req.body.customerName || 'Customer',
-    phone: req.body.phone || '',
-    district: req.body.district || 'Kerala',
-    pincode: req.body.pincode || '',
-    address: req.body.address || '',
-    occasion: req.body.occasion || 'Special Celebration',
-    deliveryDate: req.body.deliveryDate || '',
-    items: req.body.items || [],
-    subtotal: req.body.subtotal || 0,
-    deliveryCharge: req.body.deliveryCharge || 0,
-    total: req.body.total || 0,
+    id: `ZR-KL-${Math.floor(100000 + Math.random() * 900000)}`,
+    customerName,
+    phone,
+    district,
+    pincode,
+    address,
+    occasion,
+    deliveryDate,
+    items: sanitizedItems,
+    subtotal,
+    deliveryCharge,
+    total,
     paymentMode: 'Prepaid UPI (No COD)',
     status: 'Received', // 'Received' -> 'Crafting' -> 'Dispatched' -> 'Delivered'
-    source: req.body.source || 'Website / WhatsApp',
+    source,
     createdAt: new Date().toISOString()
   };
 
@@ -607,7 +749,7 @@ app.get('/api/reviews', (req, res) => {
   const reviews = db.reviews || [];
   const pinHeader = req.headers['x-admin-pin'] || req.query.admin_pin;
   const currentPin = (db.settings && db.settings.adminPin) ? String(db.settings.adminPin).trim() : '1234';
-  const isAdmin = pinHeader && (String(pinHeader).trim() === currentPin || String(pinHeader).trim() === '1234');
+  const isAdmin = pinHeader && safeCompare(String(pinHeader).trim(), currentPin);
 
   if (isAdmin) {
     res.json({ reviews });
@@ -617,15 +759,35 @@ app.get('/api/reviews', (req, res) => {
 });
 
 app.post('/api/reviews', (req, res) => {
+  const ip = getClientIP(req);
+  if (!checkRateLimit(reviewRateLimits, ip, 5, 15 * 60 * 1000)) {
+    return res.status(429).json({
+      success: false,
+      error: 'Security Rate Limit: Maximum 5 reviews per 15 minutes per IP.'
+    });
+  }
+
+  const raw = req.body || {};
+  const name = sanitizeString(raw.name, 80) || 'Valued Patron';
+  const location = sanitizeString(raw.location, 60) || 'Kerala';
+  const occasion = sanitizeString(raw.occasion, 80) || 'Bespoke Floral Gift';
+  const rawRating = parseInt(raw.rating) || 5;
+  const rating = Math.max(1, Math.min(5, rawRating));
+  const comment = sanitizeString(raw.comment, 500);
+
+  if (!comment) {
+    return res.status(400).json({ success: false, error: 'Review text cannot be empty.' });
+  }
+
   const db = readDatabase();
   if (!db.reviews) db.reviews = [];
   const newReview = {
     id: `rev-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    name: req.body.name ? String(req.body.name).trim() : 'Valued Patron',
-    location: req.body.location ? String(req.body.location).trim() : 'Kerala',
-    rating: parseInt(req.body.rating) || 5,
-    occasion: req.body.occasion ? String(req.body.occasion).trim() : 'Bespoke Floral Gift',
-    comment: req.body.comment ? String(req.body.comment).trim() : '',
+    name,
+    location,
+    rating,
+    occasion,
+    comment,
     verified: true,
     date: new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
     approved: true
@@ -689,6 +851,13 @@ app.get('/seller', (req, res) => {
 
 app.get('/', (req, res) => {
   res.sendFile('index.html', { root: __dirname });
+});
+
+// Security Defense Layer 4: Centralized Error Handler (Suppresses Stack Traces & Debug Leaks)
+app.use((err, req, res, next) => {
+  console.error('[Atelier Security Guard] Unhandled Server Exception:', err.message);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ success: false, error: 'An unexpected atelier server error occurred. Please try again later.' });
 });
 
 // Start Server

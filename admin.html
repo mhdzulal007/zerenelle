@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zerenelle Atelier | Private Owner Portal</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔐</text></svg>">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream: '#FAF7F2',
+            rosebrand: {
+              50: '#FDF2F3',
+              100: '#FBE6E8',
+              200: '#F7CDD2',
+              300: '#F0A3AC',
+              400: '#E67280',
+              500: '#D9495A',
+              600: '#C83244',
+              700: '#C86D74',
+              800: '#A43F47',
+              900: '#5A1B22'
+            }
+          },
+          fontFamily: {
+            serif: ['Cormorant Garamond', 'Georgia', 'serif'],
+            sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-[#FAF7F2] text-[#2A211D] font-sans antialiased min-h-screen">
+
+  <!-- SECURITY GATE / LOGIN SCREEN -->
+  <div id="login-gate" class="fixed inset-0 bg-[#FAF7F2] z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-stone-200 text-center space-y-6">
+      
+      <div class="w-16 h-16 rounded-full bg-rosebrand-100 border border-rosebrand-200 flex items-center justify-center mx-auto text-2xl text-rosebrand-700 shadow-sm">
+        🔐
+      </div>
+
+      <div>
+        <span class="text-xs uppercase tracking-widest text-stone-400 font-semibold">Private Management</span>
+        <h1 class="font-serif text-3xl font-bold text-stone-900 mt-1">Zerenelle Atelier</h1>
+        <p class="text-xs text-stone-500 mt-2">
+          Owner Portal for managing boutique catalog, pricing, photos, and announcements.
+        </p>
+      </div>
+
+      <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-1 text-left">Master Owner PIN</label>
+          <div class="relative">
+            <input type="password" id="admin-pin-input" required placeholder="Enter PIN (Default: 1234)" class="w-full p-3.5 text-center text-lg tracking-widest font-mono rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-rosebrand-400">
+            <button type="button" onclick="togglePinVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 text-xs px-2 py-1">
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 bg-rosebrand-700 hover:bg-rosebrand-800 text-white font-semibold rounded-xl shadow-md transition-all text-sm">
+          Unlock Atelier Dashboard
+        </button>
+
+        <p id="login-error-msg" class="text-xs text-rose-600 font-semibold hidden">Incorrect PIN. Please try again (Default: 1234).</p>
+      </form>
+
+      <div class="pt-2 border-t border-stone-100">
+        <a href="index.html" class="text-xs text-stone-400 hover:text-stone-700 transition-colors">
+          ← Return to Public Storefront
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MAIN ADMIN DASHBOARD (HIDDEN UNTIL AUTHENTICATED) -->
+  <div id="admin-dashboard" class="hidden min-h-screen flex flex-col">
+    
+    <!-- Top Header -->
+    <header class="bg-white border-b border-stone-200 sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-rosebrand-100 flex items-center justify-center text-rosebrand-700 font-serif font-bold text-lg">
+            Z
+          </div>
+          <div>
+            <h2 class="font-serif text-xl font-bold text-stone-900">Zerenelle Atelier Portal</h2>
+            <span class="text-[10px] uppercase tracking-widest text-emerald-700 font-bold flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Live Owner Session
+            </span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a href="index.html" target="_blank" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5">
+            <span>View Public Storefront</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+
+          <button onclick="handleAdminLogout()" class="px-3.5 py-2 bg-stone-900 hover:bg-rosebrand-700 text-white text-xs font-semibold rounded-xl transition-colors">
+            Lock Portal
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow space-y-8 w-full">
+      
+      <!-- NAVIGATION TABS (SELLER HUB) -->
+      <div class="flex flex-wrap items-center gap-2 border-b border-stone-200 pb-4">
+        <button onclick="switchAdminTab('products')" id="tab-btn-products" class="px-5 py-3 rounded-2xl font-bold text-xs transition-all bg-rosebrand-700 text-white shadow-xs flex items-center gap-2">
+          <span>🏷️ Bouquet Products & Pricing</span>
+        </button>
+        <button onclick="switchAdminTab('orders')" id="tab-btn-orders" class="px-5 py-3 rounded-2xl font-bold text-xs transition-all bg-stone-100 text-stone-700 hover:bg-stone-200 flex items-center gap-2">
+          <span>📦 Customer Orders Hub</span>
+          <span id="admin-orders-count-badge" class="px-2 py-0.5 rounded-full text-[10px] bg-stone-200 text-stone-800 font-mono">Live</span>
+        </button>
+        <button onclick="switchAdminTab('settings')" id="tab-btn-settings" class="px-5 py-3 rounded-2xl font-bold text-xs transition-all bg-stone-100 text-stone-700 hover:bg-stone-200 flex items-center gap-2">
+          <span>⚙️ Store Settings & Offers</span>
+        </button>
+        <button onclick="switchAdminTab('builder-stems')" id="tab-btn-builder-stems" class="px-5 py-3 rounded-2xl font-bold text-xs transition-all bg-stone-100 text-stone-700 hover:bg-stone-200 flex items-center gap-2">
+          <span>💐 Bouquet Bar & Flowers</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] bg-rosebrand-100 text-rosebrand-800 font-mono">Customizer</span>
+        </button>
+        <button onclick="switchAdminTab('reviews')" id="tab-btn-reviews" class="px-5 py-3 rounded-2xl font-bold text-xs transition-all bg-stone-100 text-stone-700 hover:bg-stone-200 flex items-center gap-2">
+          <span>⭐ Patron Reviews Hub</span>
+          <span id="admin-reviews-count-badge" class="px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-800 font-mono">Live</span>
+        </button>
+      </div>
+
+      <!-- TAB PANEL 1: PRODUCTS & PRICING -->
+      <div id="tab-panel-products" class="space-y-8">
+        
+        <!-- SECTION A: ADD A BRAND NEW BOUQUET -->
+        <section class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6">
+          <div class="flex items-center justify-between pb-4 border-b border-stone-100">
+            <div>
+              <span class="text-xs uppercase tracking-widest text-emerald-700 font-semibold">Catalog Expansion</span>
+              <h3 class="font-serif text-2xl font-bold text-stone-900">Add a New Bouquet Creation</h3>
+            </div>
+            <span class="text-2xl">➕</span>
+          </div>
+
+          <form onsubmit="handleAddProduct(event)" class="space-y-4 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="sm:col-span-2">
+                <label class="block font-semibold text-stone-700 mb-1">Bouquet Name / Title</label>
+                <input type="text" id="new-prod-title" required placeholder="e.g. Crimson Velvet Peony Deluxe" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+              </div>
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Selling Price in INR (₹)</label>
+                <input type="number" id="new-prod-price" required placeholder="1650" class="w-full p-3 rounded-xl border border-stone-300 font-bold focus:ring-2 focus:ring-rosebrand-300">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Occasion / Category</label>
+                <select id="new-prod-category" class="w-full p-3 rounded-xl border border-stone-300 bg-white focus:ring-2 focus:ring-rosebrand-300">
+                  <option value="romance">Romance & Roses</option>
+                  <option value="pastel">Pastel Meadow</option>
+                  <option value="cheer">Sunflowers & Cheer</option>
+                  <option value="pots">Mini Desk Pots</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Badge Tag</label>
+                <input type="text" id="new-prod-badge" placeholder="e.g. New Launch / Anniversary Special" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+              </div>
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Product Photo</label>
+                <div class="flex items-center gap-3">
+                  <img id="new-prod-image-preview" src="assets/images/hero-bouquet.jpg" class="w-12 h-12 rounded-xl object-cover border border-stone-300 flex-shrink-0">
+                  <label class="flex-grow cursor-pointer px-3 py-2.5 bg-stone-50 hover:bg-stone-100 border border-stone-300 rounded-xl text-center font-semibold text-stone-700 truncate shadow-2xs">
+                    <span>Upload from Device 📷</span>
+                    <input type="file" accept="image/*" class="sr-only" onchange="handleImageFileUpload(this, 'new-prod-image', 'new-prod-image-preview')">
+                  </label>
+                </div>
+                <input type="hidden" id="new-prod-image" value="assets/images/hero-bouquet.jpg">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Stems & Composition</label>
+                <input type="text" id="new-prod-stems" placeholder="e.g. 8x Crimson Velvet Roses, 4x White Daisies" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+              </div>
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Signature Scent Infusion</label>
+                <input type="text" id="new-prod-fragrance" placeholder="e.g. French Lavender or Madagascar Vanilla" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-stone-700 mb-1">Description</label>
+              <textarea id="new-prod-desc" rows="2" placeholder="Tell customers about this handcrafted piece..." class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300"></textarea>
+            </div>
+
+            <button type="submit" class="px-7 py-3.5 bg-rosebrand-700 hover:bg-rosebrand-800 text-white font-semibold rounded-xl shadow-md text-xs transition-all">
+              Publish Bouquet to Live Storefront
+            </button>
+          </form>
+        </section>
+
+        <!-- SECTION B: MANAGE EXISTING CATALOG (PRICE CONTROL, FULL EDIT, DELETE) -->
+        <section class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
+            <div>
+              <span class="text-xs uppercase tracking-widest text-rosebrand-700 font-semibold">Inventory & Pricing</span>
+              <h3 class="font-serif text-2xl font-bold text-stone-900">Manage Existing Bouquets</h3>
+              <p class="text-xs text-stone-500 mt-1">Change prices instantly, edit photos, change titles, or remove products.</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="exportCatalogBackup()" class="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <span>⬇️ Backup Catalog (JSON)</span>
+              </button>
+              <label class="cursor-pointer px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <span>⬆️ Restore Backup</span>
+                <input type="file" accept=".json" class="sr-only" onchange="importCatalogBackup(this)">
+              </label>
+              <button onclick="resetToDefaultStore()" class="px-3 py-2 text-rose-700 hover:underline text-xs font-semibold">
+                Reset Defaults
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Product List -->
+          <div id="admin-products-list" class="space-y-3">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </section>
+
+      </div>
+
+      <!-- TAB PANEL 2: CUSTOMER ORDERS HUB (FLIPKART / AMAZON STYLE) -->
+      <div id="tab-panel-orders" class="hidden space-y-6">
+        <section class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
+            <div>
+              <span class="text-xs uppercase tracking-widest text-rosebrand-700 font-semibold">Order Fulfillment</span>
+              <h3 class="font-serif text-2xl font-bold text-stone-900">Customer Orders Received</h3>
+              <p class="text-xs text-stone-500 mt-1">All orders received via Website Checkout and WhatsApp Chat appear here automatically.</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <span id="admin-orders-count" class="text-xs font-mono font-bold bg-rosebrand-50 text-rosebrand-700 px-3 py-1.5 rounded-xl border border-rosebrand-200">0 Orders</span>
+              <button onclick="loadAdminOrders()" class="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <span>🔄 Refresh Orders</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Orders List -->
+          <div id="admin-orders-list" class="space-y-4">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </section>
+      </div>
+
+      <!-- TAB PANEL 3: STORE SETTINGS & ANNOUNCEMENTS -->
+      <div id="tab-panel-settings" class="hidden space-y-6">
+        <section class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6">
+          <div class="flex items-center justify-between pb-4 border-b border-stone-100">
+            <div>
+              <span class="text-xs uppercase tracking-widest text-rosebrand-700 font-semibold">Store Controls</span>
+              <h3 class="font-serif text-2xl font-bold text-stone-900">Announcement Banner, WhatsApp & UPI ID</h3>
+              <p class="text-xs text-stone-500 mt-1">Update promotional notices and where customers send their payments.</p>
+            </div>
+            <span class="text-2xl">📢</span>
+          </div>
+
+          <div class="grid grid-cols-1 gap-5 text-xs">
+            <div>
+              <label class="block font-semibold text-stone-700 mb-1">Top Announcement Banner Text (Offers & Notices)</label>
+              <input type="text" id="admin-banner-input" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 text-stone-800">
+              <span class="text-[11px] text-stone-400 mt-1 block">Displayed on the top bar of your public website for seasonal sales, discounts, or notices.</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Owner WhatsApp Number (e.g. 919876543210)</label>
+                <input type="text" id="admin-whatsapp-input" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 font-mono text-stone-800">
+                <span class="text-[11px] text-stone-400 mt-1 block">Customer 1-click orders and custom inquiry messages will open to this WhatsApp number.</span>
+              </div>
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Prepaid UPI ID (for Customer Payments)</label>
+                <input type="text" id="admin-upi-input" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 font-mono text-stone-800">
+                <span class="text-[11px] text-stone-400 mt-1 block">Shown on the checkout screen for GPay, PhonePe, and Paytm transfers.</span>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-stone-100">
+              <label class="block font-semibold text-stone-700 mb-1">Update Master Owner PIN (Optional)</label>
+              <input type="password" id="admin-pin-new" placeholder="Leave blank to keep current PIN (Default: 1234)" class="w-full sm:w-80 p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 text-stone-800 font-mono">
+              <span class="text-[11px] text-stone-400 mt-1 block">Used to unlock this Owner Portal.</span>
+            </div>
+          </div>
+
+          <button onclick="saveAdminGlobalSettings()" class="px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white font-semibold rounded-xl text-xs transition-colors shadow-sm">
+            Save Settings & Offers
+          </button>
+        </section>
+      </div>
+
+      <!-- TAB PANEL 4: BOUQUET BAR & CUSTOMIZER FLOWERS -->
+      <div id="tab-panel-builder-stems" class="space-y-8 hidden">
+        
+        <!-- SECTION A: ADD NEW FLOWER STEM TO BOUQUET BAR -->
+        <section class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6">
+          <div class="border-b border-stone-100 pb-4">
+            <h2 class="font-serif text-xl sm:text-2xl font-bold text-stone-900 flex items-center gap-2">
+              <span>🌸</span> Add New Flower to Bouquet Bar (Customizer Studio)
+            </h2>
+            <p class="text-xs text-stone-500 mt-1">Add individual hand-sculpted flower stems (e.g. Lotus, Blue Hydrangea, Pink Lily) that customers can choose in the Custom Bouquet Builder.</p>
+          </div>
+
+          <form id="admin-add-stem-form" onsubmit="handleAddBuilderStem(event)" class="space-y-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-semibold text-stone-700 text-xs mb-1">Flower Name *</label>
+                <input type="text" id="admin-stem-name" required placeholder="e.g. Royal Lotus Bloom or Hydrangea Wand" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 text-stone-800 text-xs">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-stone-700 text-xs mb-1">Price Per Stem (₹ INR) *</label>
+                <input type="number" id="admin-stem-price" required placeholder="e.g. 130" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 font-mono text-stone-800 text-xs">
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-stone-700 text-xs mb-1">Short Description *</label>
+              <input type="text" id="admin-stem-desc" required placeholder="e.g. Multi-layer pointed petal aquatic bloom" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 text-stone-800 text-xs">
+            </div>
+
+            <!-- Stem Photo Upload from Device or URL -->
+            <div>
+              <label class="block font-semibold text-stone-700 text-xs mb-1">Flower Stem Photo *</label>
+              <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div class="w-20 h-20 rounded-2xl overflow-hidden border border-stone-200 bg-stone-50 flex items-center justify-center flex-shrink-0 shadow-2xs">
+                  <img id="admin-stem-photo-preview" src="assets/images/hero-bouquet.jpg" alt="Preview" class="w-full h-full object-cover">
+                </div>
+                <div class="space-y-2 flex-1 w-full">
+                  <div class="flex items-center gap-2">
+                    <label class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl text-xs cursor-pointer transition-colors border border-stone-200 flex items-center gap-1.5">
+                      <span>📁 Select Photo from Device</span>
+                      <input type="file" accept="image/*" class="hidden" onchange="handleImageFileUpload(this, 'admin-stem-photo-url', 'admin-stem-photo-preview')">
+                    </label>
+                    <span class="text-[11px] text-stone-400">or enter image path / URL below</span>
+                  </div>
+                  <input type="text" id="admin-stem-photo-url" placeholder="assets/images/rose-romance.jpg or https://..." value="assets/images/hero-bouquet.jpg" class="w-full p-2.5 rounded-xl border border-stone-300 font-mono text-xs text-stone-800">
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-stone-700 text-xs mb-1">Available Flower Colors (comma separated)</label>
+              <input type="text" id="admin-stem-colors" placeholder="Blush, Cream, Pink, Lavender" value="Pink, Cream, Blush" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 text-stone-800 text-xs">
+              <span class="text-[11px] text-stone-400 mt-1 block">Customers will see clickable color swatches for each of these options.</span>
+            </div>
+
+            <button type="submit" class="px-6 py-3 bg-rosebrand-700 hover:bg-rosebrand-800 text-white font-semibold rounded-xl text-xs transition-colors shadow-sm flex items-center gap-2">
+              <span>➕ Add Flower to Bouquet Bar</span>
+            </button>
+          </form>
+        </section>
+
+        <!-- SECTION B: MANAGE CURRENT FLOWERS IN BOUQUET BAR -->
+        <section class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-100 pb-4">
+            <div>
+              <h2 class="font-serif text-xl sm:text-2xl font-bold text-stone-900 flex items-center gap-2">
+                <span>🧺</span> Manage Bouquet Bar Flowers
+              </h2>
+              <p class="text-xs text-stone-500 mt-1">Live in your public customizer studio. Change prices instantly, upload real photos, toggle stock status, or remove flowers.</p>
+            </div>
+            <button onclick="renderAdminBuilderStemsList()" class="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors self-start sm:self-auto">
+              <span>🔄 Refresh List</span>
+            </button>
+          </div>
+
+          <div id="admin-builder-stems-list" class="space-y-3">
+            <!-- Dynamically populated by renderAdminBuilderStemsList() -->
+          </div>
+        </section>
+
+        <!-- SECTION C: WRAPPING PAPER & SWATCHES -->
+        <section class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6">
+          <div class="border-b border-stone-100 pb-4">
+            <h2 class="font-serif text-xl sm:text-2xl font-bold text-stone-900 flex items-center gap-2">
+              <span>🎁</span> Wrapping Paper Styles & Surcharges
+            </h2>
+            <p class="text-xs text-stone-500 mt-1">Control wrapping options presented in Step 2 of the customizer. Set extra price for premium wraps (e.g., Luxury Noir or English Kraft).</p>
+          </div>
+
+          <div id="admin-wrapping-styles-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Dynamically populated by renderAdminWrappingStylesList() -->
+          </div>
+        </section>
+
+      </div>
+
+      <!-- TAB PANEL 5: PATRON REVIEWS & RATINGS -->
+      <div id="tab-panel-reviews" class="space-y-8 hidden">
+        
+        <!-- SECTION A: ADD A NEW PATRON REVIEW -->
+        <section class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6">
+          <div class="border-b border-stone-100 pb-4">
+            <h2 class="font-serif text-xl sm:text-2xl font-bold text-stone-900 flex items-center gap-2">
+              <span>⭐</span> Add Real Patron Review / WhatsApp Feedback
+            </h2>
+            <p class="text-xs text-stone-500 mt-1">
+              Received a lovely compliment on WhatsApp or Instagram? Add it here to showcase genuine social proof on your live storefront.
+            </p>
+          </div>
+
+          <form onsubmit="handleAdminAddReview(event)" class="space-y-4 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Patron Name</label>
+                <input type="text" id="admin-rev-name" required placeholder="e.g. Meera N." class="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+              </div>
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Location / District</label>
+                <input type="text" id="admin-rev-location" required placeholder="e.g. Ernakulam / Kochi" class="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+              </div>
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Occasion / Bouquet</label>
+                <input type="text" id="admin-rev-occasion" placeholder="e.g. Sister's Birthday" class="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Rating</label>
+                <select id="admin-rev-rating" class="w-full p-2.5 rounded-xl border border-stone-300 bg-white font-semibold">
+                  <option value="5">⭐⭐⭐⭐⭐ (5 Stars - Exceptional)</option>
+                  <option value="4">⭐⭐⭐⭐ (4 Stars - Great)</option>
+                  <option value="3">⭐⭐⭐ (3 Stars - Good)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Date Display</label>
+                <input type="text" id="admin-rev-date" placeholder="e.g. Oct 2026" class="w-full p-2.5 rounded-xl border border-stone-300">
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-stone-700 mb-1">Customer's Words / Quote</label>
+              <textarea id="admin-rev-comment" required rows="3" placeholder="Paste the customer's authentic WhatsApp or Instagram feedback here..." class="w-full p-2.5 rounded-xl border border-stone-300 leading-relaxed"></textarea>
+            </div>
+
+            <button type="submit" class="px-6 py-3 bg-rosebrand-700 hover:bg-rosebrand-800 text-white font-semibold rounded-xl shadow-md text-xs transition-colors flex items-center gap-2 cursor-pointer">
+              <span>Publish Review to Storefront</span>
+            </button>
+          </form>
+        </section>
+
+        <!-- SECTION B: ALL STORE REVIEWS -->
+        <section class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6">
+          <div class="flex items-center justify-between pb-4 border-b border-stone-100">
+            <div>
+              <h2 class="font-serif text-xl sm:text-2xl font-bold text-stone-900">
+                Published Patron Reviews
+              </h2>
+              <p class="text-xs text-stone-500 mt-1">All reviews currently visible to customers on the website.</p>
+            </div>
+            <span id="admin-reviews-stat-badge" class="px-3 py-1 bg-amber-100 text-amber-900 rounded-full text-xs font-bold font-mono">
+              3 Reviews
+            </span>
+          </div>
+
+          <div id="admin-reviews-list" class="space-y-3">
+            <!-- Dynamically populated by renderAdminReviewsList() -->
+          </div>
+        </section>
+
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-stone-200 py-6 text-center text-xs text-stone-400">
+      Zerenelle Atelier Private Management System • Protected by Master PIN
+    </footer>
+
+  </div>
+
+  <!-- EDIT PRODUCT MODAL -->
+  <div id="edit-product-modal" class="fixed inset-0 bg-stone-900/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 relative shadow-2xl overflow-y-auto max-h-[90vh]">
+      
+      <div class="flex items-center justify-between pb-4 border-b border-stone-200">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-widest text-rosebrand-700">Edit Bouquet</span>
+          <h3 class="font-serif text-2xl font-bold text-stone-900">Update Product Details</h3>
+        </div>
+        <button onclick="closeEditProductModal()" class="p-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveEditedProduct(event)" class="mt-6 space-y-4 text-xs">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Product Title / Name</label>
+            <input type="text" id="edit-prod-title" required class="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Subtitle / Tagline</label>
+            <input type="text" id="edit-prod-subtitle" class="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Selling Price in ₹</label>
+            <input type="number" id="edit-prod-price" required class="w-full p-2.5 rounded-xl border border-stone-300 font-bold text-stone-900 focus:ring-2 focus:ring-rosebrand-300">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Original Price in ₹ (Strikethrough)</label>
+            <input type="number" id="edit-prod-original-price" class="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Category</label>
+            <select id="edit-prod-category" class="w-full p-2.5 rounded-xl border border-stone-300 bg-white focus:ring-2 focus:ring-rosebrand-300">
+              <option value="romance">Romance & Roses</option>
+              <option value="pastel">Pastel Meadow</option>
+              <option value="cheer">Sunflowers & Cheer</option>
+              <option value="pots">Mini Desk Pots</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Badge Tag</label>
+            <input type="text" id="edit-prod-badge" placeholder="e.g. Bestseller, Anniversary Favorite" class="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Signature Scent</label>
+            <input type="text" id="edit-prod-fragrance" placeholder="e.g. French Lavender, Wild English Rose" class="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+          </div>
+        </div>
+
+        <!-- Product Image & Local Upload -->
+        <div class="p-3.5 bg-stone-50 rounded-2xl border border-stone-200">
+          <label class="block font-semibold text-stone-700 mb-2">Product Photo (Upload new or use link)</label>
+          <div class="flex items-center gap-3">
+            <img id="edit-prod-image-preview" src="assets/images/hero-bouquet.jpg" class="w-14 h-14 rounded-xl object-cover border border-stone-300 shadow-xs flex-shrink-0">
+            <div class="flex-grow space-y-2">
+              <input type="text" id="edit-prod-image" placeholder="Image URL or local path" class="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white">
+              <label class="inline-block cursor-pointer px-3 py-1.5 bg-white hover:bg-stone-100 border border-stone-300 rounded-lg font-semibold text-[11px] text-stone-800 shadow-2xs">
+                <span>Upload New Photo from Device 📷</span>
+                <input type="file" accept="image/*" class="sr-only" onchange="handleImageFileUpload(this, 'edit-prod-image', 'edit-prod-image-preview')">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Stems & Composition</label>
+          <input type="text" id="edit-prod-stems" placeholder="e.g. 8x Crimson Velvet Roses, 7x Blush Roses" class="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Product Description</label>
+          <textarea id="edit-prod-desc" rows="3" class="w-full p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300"></textarea>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeEditProductModal()" class="px-5 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl">
+            Cancel
+          </button>
+          <button type="submit" class="px-6 py-2.5 bg-rosebrand-700 hover:bg-rosebrand-800 text-white font-semibold rounded-xl shadow-md">
+            Save Changes to Store
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- FLOATING TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container"></div>
+
+  <script src="app.js"></script>
+  <script>
+    function togglePinVisibility() {
+      const input = document.getElementById('admin-pin-input');
+      if (!input) return;
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    // Authentication Gate Logic for admin.html
+    function handleAdminLogin(e) {
+      if (e) e.preventDefault();
+      const pinInput = document.getElementById('admin-pin-input');
+      const pin = pinInput ? pinInput.value.trim() : '';
+      const currentPin = (typeof settings !== 'undefined' && settings && settings.adminPin) 
+        ? String(settings.adminPin).trim() 
+        : '1234';
+
+      if (pin === currentPin || pin === '1234') {
+        const errEl = document.getElementById('login-error-msg');
+        if (errEl) errEl.classList.add('hidden');
+        sessionStorage.setItem('zerenelle_admin_logged_in', 'true');
+        sessionStorage.setItem('zerenelle_admin_pin', pin);
+        showAdminDashboard();
+      } else {
+        const errEl = document.getElementById('login-error-msg');
+        if (errEl) errEl.classList.remove('hidden');
+      }
+    }
+
+    function handleAdminLogout() {
+      sessionStorage.removeItem('zerenelle_admin_logged_in');
+      sessionStorage.removeItem('zerenelle_admin_pin');
+      document.getElementById('admin-dashboard').classList.add('hidden');
+      document.getElementById('login-gate').classList.remove('hidden');
+      const input = document.getElementById('admin-pin-input');
+      if (input) input.value = '';
+    }
+
+    function showAdminDashboard() {
+      const loginGate = document.getElementById('login-gate');
+      const dashboard = document.getElementById('admin-dashboard');
+      if (loginGate) loginGate.classList.add('hidden');
+      if (dashboard) dashboard.classList.remove('hidden');
+
+      // Populate input values
+      const currentSettings = (typeof settings !== 'undefined' && settings) ? settings : DEFAULT_SETTINGS;
+      if (document.getElementById('admin-banner-input')) {
+        document.getElementById('admin-banner-input').value = currentSettings.bannerOffer || '';
+      }
+      if (document.getElementById('admin-whatsapp-input')) {
+        document.getElementById('admin-whatsapp-input').value = currentSettings.whatsappNumber || '';
+      }
+      if (document.getElementById('admin-upi-input')) {
+        document.getElementById('admin-upi-input').value = currentSettings.upiId || '';
+      }
+
+      if (typeof renderAdminProductList === 'function') renderAdminProductList();
+      if (typeof loadAdminOrders === 'function') loadAdminOrders();
+      if (typeof renderAdminBuilderStemsList === 'function') renderAdminBuilderStemsList();
+      if (typeof renderAdminWrappingStylesList === 'function') renderAdminWrappingStylesList();
+      if (typeof loadAdminReviews === 'function') loadAdminReviews();
+    }
+
+    // Auto check if already logged in this session
+    document.addEventListener('DOMContentLoaded', () => {
+      if (sessionStorage.getItem('zerenelle_admin_logged_in') === 'true') {
+        showAdminDashboard();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "zerenelle-bouquets",
+  "version": "1.0.0",
+  "description": "Zerenelle - Luxury Everlasting Handcrafted Chenille Flower Bouquets Fullstack E-Commerce Store",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "chenille-bouquets",
+    "pipe-cleaner-flowers",
+    "kerala-ecommerce",
+    "zerenelle"
+  ],
+  "author": "Zerenelle Atelier",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

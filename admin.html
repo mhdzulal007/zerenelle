@@ -324,9 +324,14 @@
             </div>
 
             <div class="pt-3 sm:pt-4 border-t border-stone-100">
-              <label class="block font-semibold text-stone-700 mb-1">Update Master Owner PIN (Optional)</label>
-              <input type="password" id="admin-pin-new" placeholder="Leave blank to keep current PIN (Default: 1234)" class="w-full sm:w-80 p-2.5 sm:p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 text-stone-800 font-mono">
-              <span class="text-[11px] text-stone-400 mt-1 block">Used to unlock this Owner Portal.</span>
+              <label class="block font-semibold text-stone-700 mb-1">Master Owner PIN (Access Code)</label>
+              <div class="relative w-full sm:w-80">
+                <input type="password" id="admin-pin-input-settings" placeholder="e.g. 1234" class="w-full p-2.5 sm:p-3 pr-10 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 text-stone-800 font-mono tracking-widest text-base">
+                <button type="button" onclick="toggleSettingsPinVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 text-xs px-2 py-1 cursor-pointer">
+                  👁️
+                </button>
+              </div>
+              <span class="text-[11px] text-stone-400 mt-1 block">Your active PIN is displayed here. You can reveal it with the eye icon or edit it anytime.</span>
             </div>
           </div>
 
@@ -680,26 +685,52 @@
       if (input) input.value = '';
     }
 
+    function toggleSettingsPinVisibility() {
+      const input = document.getElementById('admin-pin-input-settings');
+      if (!input) return;
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function populateAdminSettingsInputs() {
+      const currentSettings = (typeof settings !== 'undefined' && settings) ? settings : DEFAULT_SETTINGS;
+      const bannerEl = document.getElementById('admin-banner-input');
+      const waEl = document.getElementById('admin-whatsapp-input');
+      const upiEl = document.getElementById('admin-upi-input');
+      const igEl = document.getElementById('admin-instagram-input');
+      const pinEl = document.getElementById('admin-pin-input-settings');
+
+      if (bannerEl && currentSettings.bannerOffer !== undefined) bannerEl.value = currentSettings.bannerOffer;
+      if (waEl && currentSettings.whatsappNumber !== undefined) waEl.value = currentSettings.whatsappNumber;
+      if (upiEl && currentSettings.upiId !== undefined) upiEl.value = currentSettings.upiId;
+      if (igEl && currentSettings.instagramHandle !== undefined) igEl.value = currentSettings.instagramHandle;
+      if (pinEl && currentSettings.adminPin !== undefined) pinEl.value = currentSettings.adminPin;
+    }
+
+    async function refreshAdminSettingsFromServer() {
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.settings) {
+            settings = { ...DEFAULT_SETTINGS, ...data.settings };
+            localStorage.setItem('zerenelle_settings', JSON.stringify(settings));
+            populateAdminSettingsInputs();
+          }
+        }
+      } catch (e) {}
+    }
+
     function showAdminDashboard() {
       const loginGate = document.getElementById('login-gate');
       const dashboard = document.getElementById('admin-dashboard');
       if (loginGate) loginGate.classList.add('hidden');
       if (dashboard) dashboard.classList.remove('hidden');
 
-      // Populate input values
-      const currentSettings = (typeof settings !== 'undefined' && settings) ? settings : DEFAULT_SETTINGS;
-      if (document.getElementById('admin-banner-input')) {
-        document.getElementById('admin-banner-input').value = currentSettings.bannerOffer || '';
-      }
-      if (document.getElementById('admin-whatsapp-input')) {
-        document.getElementById('admin-whatsapp-input').value = currentSettings.whatsappNumber || '';
-      }
-      if (document.getElementById('admin-upi-input')) {
-        document.getElementById('admin-upi-input').value = currentSettings.upiId || '';
-      }
-      if (document.getElementById('admin-instagram-input')) {
-        document.getElementById('admin-instagram-input').value = currentSettings.instagramHandle || 'zerenelle';
-      }
+      // Populate input values from latest known settings
+      populateAdminSettingsInputs();
+
+      // Immediately pull fresh settings from server database to guarantee 100% sync
+      refreshAdminSettingsFromServer();
 
       if (typeof renderAdminProductList === 'function') renderAdminProductList();
       if (typeof loadAdminOrders === 'function') loadAdminOrders();

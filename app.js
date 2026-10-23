@@ -1889,6 +1889,9 @@ async function loadServerData() {
       settings = { ...DEFAULT_SETTINGS, ...setRes.settings };
       localStorage.setItem('zerenelle_settings', JSON.stringify(settings));
       applySiteSettings();
+      if (typeof populateAdminSettingsInputs === 'function') {
+        populateAdminSettingsInputs();
+      }
     }
 
     if (stemRes && stemRes.success && Array.isArray(stemRes.stems) && stemRes.stems.length > 0) {
@@ -2149,33 +2152,64 @@ async function handleAddProduct(e) {
 }
 
 async function saveAdminGlobalSettings() {
-  const banner = document.getElementById('admin-banner-input').value.trim();
-  const wa = document.getElementById('admin-whatsapp-input').value.trim();
-  const upi = document.getElementById('admin-upi-input').value.trim();
+  const banner = document.getElementById('admin-banner-input')?.value.trim();
+  const wa = document.getElementById('admin-whatsapp-input')?.value.trim();
+  const upi = document.getElementById('admin-upi-input')?.value.trim();
   const ig = document.getElementById('admin-instagram-input')?.value.trim();
-  const pin = document.getElementById('admin-pin-new')?.value.trim();
+  const pinInput = document.getElementById('admin-pin-input-settings') || document.getElementById('admin-pin-new');
+  const pin = pinInput?.value.trim();
 
-  if (banner) settings.bannerOffer = banner;
-  if (wa) settings.whatsappNumber = wa;
-  if (upi) settings.upiId = upi;
-  if (ig) settings.instagramHandle = ig.replace(/^@/, '');
-  if (pin) {
+  const payload = {};
+
+  if (banner !== undefined) {
+    settings.bannerOffer = banner;
+    payload.bannerOffer = banner;
+  }
+  if (wa !== undefined && wa !== '') {
+    settings.whatsappNumber = wa;
+    payload.whatsappNumber = wa;
+  }
+  if (upi !== undefined && upi !== '') {
+    settings.upiId = upi;
+    payload.upiId = upi;
+  }
+  if (ig !== undefined) {
+    const cleanIg = ig.replace(/^@/, '');
+    settings.instagramHandle = cleanIg;
+    payload.instagramHandle = cleanIg;
+  }
+  if (pin && pin !== '') {
     settings.adminPin = pin;
+    payload.adminPin = pin;
     sessionStorage.setItem('zerenelle_admin_pin', pin);
-    const pinInput = document.getElementById('admin-pin-new');
-    if (pinInput) pinInput.value = '';
   }
 
   saveSettings();
-  showToast('Admin settings & Master PIN updated successfully! 🌸');
 
   try {
-    await fetch('/api/settings', {
+    const res = await fetch('/api/settings', {
       method: 'PUT',
       headers: getAdminFetchHeaders(),
-      body: JSON.stringify(settings)
+      body: JSON.stringify(payload)
     });
-  } catch (err) {}
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.settings) {
+        settings = { ...DEFAULT_SETTINGS, ...data.settings };
+        saveSettings();
+        if (typeof populateAdminSettingsInputs === 'function') {
+          populateAdminSettingsInputs();
+        }
+      }
+      showToast('🌸 Atelier settings & PIN saved successfully!');
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.error || 'Failed to save settings on server');
+    }
+  } catch (err) {
+    showToast('Settings saved locally');
+  }
 }
 
 function resetToDefaultStore() {
@@ -2894,6 +2928,9 @@ function switchAdminTab(tabName) {
     renderAdminWrappingStylesList();
   } else if (tabName === 'reviews') {
     loadAdminReviews();
+  } else if (tabName === 'settings') {
+    if (typeof populateAdminSettingsInputs === 'function') populateAdminSettingsInputs();
+    if (typeof refreshAdminSettingsFromServer === 'function') refreshAdminSettingsFromServer();
   }
 }
 

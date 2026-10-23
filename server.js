@@ -576,10 +576,34 @@ app.get('/api/settings', (req, res) => {
 
 app.put('/api/settings', requireAdminAuth, (req, res) => {
   const db = readDatabase();
-  db.settings = {
-    ...db.settings,
-    ...req.body
-  };
+  if (!db.settings) db.settings = { ...DEFAULT_SETTINGS };
+  const update = req.body || {};
+
+  // Protect Admin PIN: only update if a non-empty string is explicitly submitted; NEVER reset or overwrite with blank
+  if (update.adminPin !== undefined) {
+    const cleanPin = String(update.adminPin).trim();
+    if (cleanPin.length > 0) {
+      db.settings.adminPin = cleanPin;
+    }
+  }
+
+  // Update only provided fields, preserving all other existing settings
+  if (update.whatsappNumber !== undefined && String(update.whatsappNumber).trim() !== '') {
+    db.settings.whatsappNumber = String(update.whatsappNumber).trim();
+  }
+  if (update.bannerOffer !== undefined) {
+    db.settings.bannerOffer = String(update.bannerOffer).trim();
+  }
+  if (update.upiId !== undefined && String(update.upiId).trim() !== '') {
+    db.settings.upiId = String(update.upiId).trim();
+  }
+  if (update.instagramHandle !== undefined) {
+    db.settings.instagramHandle = String(update.instagramHandle).trim().replace(/^@/, '');
+  }
+  if (update.coupons !== undefined && typeof update.coupons === 'object') {
+    db.settings.coupons = update.coupons;
+  }
+
   writeDatabase(db);
   res.json({ success: true, settings: db.settings });
 });

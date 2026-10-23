@@ -118,9 +118,48 @@
       "WELCOME10": 0.1,
       "KERALA10": 0.1,
       "ZERENELLE": 0.15
-    }
+    },
+    "instagramHandle": "zerenelle"
   },
   "orders": [
+    {
+      "id": "ZR-WA-642738",
+      "customerName": "WhatsApp Inquiry Client",
+      "phone": "",
+      "district": "Kerala",
+      "pincode": "",
+      "address": "",
+      "occasion": "Special Celebration",
+      "deliveryDate": "",
+      "items": [
+        {
+          "id": "zr-sig-pastel",
+          "title": "The Zerenelle Signature Pastel",
+          "subtitle": "100% Hand-Sculpted Everlasting Bouquet",
+          "category": "pastel",
+          "price": 299,
+          "originalPrice": 1999,
+          "rating": 4.95,
+          "reviewsCount": 142,
+          "badge": "Atelier Bestseller",
+          "image": "assets/images/hero-bouquet.jpg",
+          "description": "Our crown jewel arrangement. Over 14 hand-sculpted stems featuring velvet blush roses, sunny cream chamomile daisies, and plush peach tulips. Wrapped in signature Korean translucent frosted wrap with a double blush satin bow.",
+          "stems": "5x Blush Velvet Roses, 4x Peach Chenille Tulips, 5x Cream Daisies, 6x Fuzzy Sage Foliage",
+          "dimensions": "38 cm H × 30 cm W",
+          "fragrance": "Delicate Madagascar Vanilla (Optional)",
+          "scentNotes": "Warm vanilla, sweet almond, gentle floral musk",
+          "inStock": true,
+          "quantity": 1
+        }
+      ],
+      "subtotal": 299,
+      "deliveryCharge": 120,
+      "total": 419,
+      "paymentMode": "Prepaid UPI (No COD)",
+      "status": "Received",
+      "source": "WhatsApp Chat Direct",
+      "createdAt": "2026-10-23T18:08:21.000Z"
+    },
     {
       "id": "ZR-WA-540158",
       "customerName": "WhatsApp Inquiry Client",

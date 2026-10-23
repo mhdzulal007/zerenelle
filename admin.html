@@ -290,16 +290,24 @@
               <span class="text-[11px] text-stone-400 mt-1 block">Displayed on the top bar of your public website for seasonal sales, discounts, or notices.</span>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label class="block font-semibold text-stone-700 mb-1">Owner WhatsApp Number (e.g. 919876543210)</label>
+                <label class="block font-semibold text-stone-700 mb-1">Owner WhatsApp Number</label>
                 <input type="text" id="admin-whatsapp-input" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 font-mono text-stone-800">
-                <span class="text-[11px] text-stone-400 mt-1 block">Customer 1-click orders and custom inquiry messages will open to this WhatsApp number.</span>
+                <span class="text-[11px] text-stone-400 mt-1 block">Receives 1-click customer order chats.</span>
               </div>
               <div>
-                <label class="block font-semibold text-stone-700 mb-1">Prepaid UPI ID (for Customer Payments)</label>
+                <label class="block font-semibold text-stone-700 mb-1">Official Instagram Handle</label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-stone-400 font-mono">@</span>
+                  <input type="text" id="admin-instagram-input" placeholder="zerenelle" class="w-full pl-8 p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 font-mono text-stone-800">
+                </div>
+                <span class="text-[11px] text-stone-400 mt-1 block">Links customers to your Instagram profile.</span>
+              </div>
+              <div>
+                <label class="block font-semibold text-stone-700 mb-1">Prepaid UPI ID</label>
                 <input type="text" id="admin-upi-input" class="w-full p-3 rounded-xl border border-stone-300 focus:ring-2 focus:ring-rosebrand-300 font-mono text-stone-800">
-                <span class="text-[11px] text-stone-400 mt-1 block">Shown on the checkout screen for GPay, PhonePe, and Paytm transfers.</span>
+                <span class="text-[11px] text-stone-400 mt-1 block">Shown for GPay, PhonePe & Paytm.</span>
               </div>
             </div>
 
@@ -653,6 +661,9 @@
       }
       if (document.getElementById('admin-upi-input')) {
         document.getElementById('admin-upi-input').value = currentSettings.upiId || '';
+      }
+      if (document.getElementById('admin-instagram-input')) {
+        document.getElementById('admin-instagram-input').value = currentSettings.instagramHandle || 'zerenelle';
       }
 
       if (typeof renderAdminProductList === 'function') renderAdminProductList();

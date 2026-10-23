@@ -118,6 +118,7 @@ const DEFAULT_SETTINGS = {
   whatsappNumber: '919876543210',
   upiId: 'zerenelle@okhdfcbank',
   bannerOffer: '✨ Everlasting Handcrafted Chenille Bouquets • All Kerala Delivery Only (Prepaid / No COD) • Code: WELCOME10 for 10% Off ✨',
+  instagramHandle: 'zerenelle',
   coupons: {
     'KERALA10': 0.10,
     'WELCOME10': 0.10,
@@ -343,6 +344,15 @@ function applySiteSettings() {
   if (upiDisplay && settings.upiId) {
     upiDisplay.textContent = settings.upiId;
   }
+  const igHandle = (settings.instagramHandle || 'zerenelle').replace(/^@/, '');
+  const igUrl = `https://instagram.com/${igHandle}`;
+  ['hero-instagram-link', 'nav-instagram-link', 'mobile-instagram-link', 'cart-instagram-link', 'conf-instagram-link', 'footer-instagram-link', 'floating-instagram-link'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.href = igUrl;
+  });
+  document.querySelectorAll('.ig-handle-text').forEach(el => {
+    el.textContent = igHandle;
+  });
 }
 
 // 4. CART OPERATIONS
@@ -2129,11 +2139,13 @@ async function saveAdminGlobalSettings() {
   const banner = document.getElementById('admin-banner-input').value.trim();
   const wa = document.getElementById('admin-whatsapp-input').value.trim();
   const upi = document.getElementById('admin-upi-input').value.trim();
+  const ig = document.getElementById('admin-instagram-input')?.value.trim();
   const pin = document.getElementById('admin-pin-new')?.value.trim();
 
   if (banner) settings.bannerOffer = banner;
   if (wa) settings.whatsappNumber = wa;
   if (upi) settings.upiId = upi;
+  if (ig) settings.instagramHandle = ig.replace(/^@/, '');
   if (pin) settings.adminPin = pin;
 
   saveSettings();
